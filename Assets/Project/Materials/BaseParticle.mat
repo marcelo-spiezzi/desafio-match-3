@@ -1,5 +1,18 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-304147402777801723
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Editor::UnityEditor.Rendering.Universal.AssetVersion
+  version: 10
 --- !u!21 &2100000
 Material:
   serializedVersion: 8
@@ -7,8 +20,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: TileBaseMaterial
-  m_Shader: {fileID: -6465566751694194690, guid: 038b6d499b5c55d47831dd9237ce72ea, type: 3}
+  m_Name: BaseParticle
+  m_Shader: {fileID: -6465566751694194690, guid: 78c5e3014fe9687488d49c90da94e853, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -24,7 +37,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _MainTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: -1304905567622442630, guid: 0a6fb97cde504e4408cc6c8b0d76a38e, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -40,26 +53,8 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
-    m_Floats:
-    - _ColorMask: 15
-    - _Desnity: 8
-    - _Dissolve: 1
-    - _EffectRotateSpeed: 5
-    - _EffectStrength: 30
-    - _RotateSpeed: 5
-    - _Stencil: 0
-    - _StencilComp: 8
-    - _StencilOp: 0
-    - _StencilReadMask: 255
-    - _StencilWriteMask: 255
-    - _Test: 0.67
-    - _UIMaskSoftnessX: 1
-    - _UIMaskSoftnessY: 1
+    m_Floats: []
     m_Colors:
-    - _ClipRect: {r: 0, g: 0, b: 0, a: 0}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Emissive: {r: 3.4415903, g: 3.4415903, b: 3.4415903, a: 1}
-    - _MultiplyColor: {r: 1, g: 1, b: 1, a: 1}
-    - m_Color: {r: 1, g: 1, b: 1, a: 1}
+    - White: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
