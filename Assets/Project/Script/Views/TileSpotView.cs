@@ -21,12 +21,14 @@ namespace Gazeus.DesafioMatch3.Views
         }
         #endregion
 
-        public Tween AnimatedSetTile(GameObject tile)
+        public Tween AnimatedSetTile(GameObject tile, bool isValidCombination, float moveDuration, Ease moveCurve, float wrongScale, float wrongDuration)
         {
             tile.transform.SetParent(transform);
             tile.transform.DOKill();
 
-            return tile.transform.DOMove(transform.position, 0.3f);
+            if (!isValidCombination) tile.transform.DOPunchScale(Vector3.one * wrongScale, wrongDuration);
+
+            return tile.transform.DOMove(transform.position, moveDuration).SetEase(moveCurve);
         }
 
         public void SetPosition(int x, int y)

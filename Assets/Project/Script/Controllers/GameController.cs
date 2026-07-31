@@ -1,14 +1,15 @@
 using DG.Tweening;
+using DG.Tweening.Core.Easing;
 using Gazeus.DesafioMatch3.Core;
 using Gazeus.DesafioMatch3.Models;
 using Gazeus.DesafioMatch3.Views;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEditor.Graphs;
 using UnityEngine;
 using UnityEngine.SocialPlatforms.Impl;
-using TMPro;
 
 namespace Gazeus.DesafioMatch3.Controllers
 {
@@ -19,9 +20,9 @@ namespace Gazeus.DesafioMatch3.Controllers
         [SerializeField] private CanvasGroup mainMenu;
         [SerializeField] private RectTransform mainMenuPanel;
         [SerializeField] private RectTransform mainMenuAnchorRef;
+        [SerializeField] private RectTransform mainMenuButtonsHolder;
         [SerializeField] private CanvasGroup gameMenu;
         [SerializeField] private Transform BoardTitle;
-
 
         [Header("Menu Animation Settings")]
         [SerializeField] private float moveMenuX = 300f;
@@ -29,13 +30,16 @@ namespace Gazeus.DesafioMatch3.Controllers
         [SerializeField] private Ease showMenuCurve;
         [SerializeField] private float hideMenuDuration = 1.2f;
         [SerializeField] private Ease hideMenuCurve;
+        [SerializeField] private float shrinkButtonPerc = 0.5f;
+        [SerializeField] private float shrinkButtonDuration = 0.5f;
+        [SerializeField] private float perButtonDelay = 0.2f;
+        [SerializeField] private Ease shrinkButtonCurve;
         [SerializeField] private float showGameMenuDuration = 1.2f;
         [SerializeField] private float hideGameMenuDuration = 1.2f;
         [SerializeField] private float boardInDuration = 0.8f;
         [SerializeField] private Ease boardInCurve;
         [SerializeField] private float boardOutDuration = 0.4f;
         [SerializeField] private Ease boardOutCurve;
-
 
         [Header("Board Config")]
         [SerializeField] private int _maxCellSize = 80;
@@ -45,8 +49,23 @@ namespace Gazeus.DesafioMatch3.Controllers
         [Header("Game Animation Settings")]
         [SerializeField] private float dissolveScale = 1.2f;
         [SerializeField] private float dissolveDuration = 0.1f;
+        [SerializeField] private float dissolveDurationCombo = 0.2f;
+        [SerializeField] private Ease dissolveCurve;
+        [SerializeField] private Ease dissolveShaderCurve;
         [SerializeField] private Vector3 comboRotation;
+        [SerializeField] private Ease comboRotateCurve;
+        [SerializeField] private float bounceBGDuration = 0.3f;
+        [SerializeField] private Ease bounceBGCurve;
+        [SerializeField] private float shineBGDuration = 0.3f;
+        [SerializeField] private Ease shineBGCurve;
         [SerializeField] private ParticleSystem destroyParticle;
+        [SerializeField] private ParticleSystem ParticleCombo_Left;
+        [SerializeField] private ParticleSystem ParticleCombo_Right;
+        [SerializeField] private float particleDelayPerc = 0.8f;
+        [SerializeField] private float moveDuration = 0.3f;
+        [SerializeField] private Ease moveCurve;
+        [SerializeField] private float wrongMovePunchScale = 1.1f;
+        [SerializeField] private float wrongMovePunchDuration = 0.1f;
 
         private GameService _gameService;
 
@@ -68,11 +87,14 @@ namespace Gazeus.DesafioMatch3.Controllers
         private void OnDestroy()
         {
             _boardView.TileClicked -= OnTileClick;
+            Shader.SetGlobalFloat("_BounceBG", 0.0f);
         }
 
         private void Start()
         {
             _isGameActive = false;
+
+            Shader.SetGlobalFloat("_BounceBG", 0.0f);
 
             gameMenu.alpha = 0.0f;
             gameMenu.interactable = false;
@@ -80,7 +102,6 @@ namespace Gazeus.DesafioMatch3.Controllers
             mainMenuPanel.transform.position = new Vector3(mainMenuAnchorRef.transform.position.x + moveMenuX, 
                 mainMenuPanel.transform.position.y, mainMenuPanel.transform.position.z);
             ShowMainMenu();
-
         }
 
         public void UpdateBoardTitle(string name)
@@ -109,7 +130,7 @@ namespace Gazeus.DesafioMatch3.Controllers
         public void ExitGame()
         {
             _isGameActive = false;
-            _boardView.DestroyBoard(boardOutDuration, boardOutCurve); //not performing any checks in here, assuming tweens and other code would do OnDestroy() validations at a final product scenario
+            _boardView.DestroyBoard(boardOutDuration, boardOutCurve); //not performing any checks in here, assuming tweens and other code would do OnDestroy() validations at a final product
             ShowMainMenu();
             HideGameMenu();
         }
@@ -138,6 +159,18 @@ namespace Gazeus.DesafioMatch3.Controllers
                 mainMenu.alpha = value;
             });
 
+            int i = 0;
+            foreach (Transform child in mainMenuButtonsHolder)
+            {
+                float shrinkSize = child.GetComponent<RectTransform>().sizeDelta.x * shrinkButtonPerc;
+                DOVirtual.Float(-shrinkSize, 0.0f, shrinkButtonDuration + (i * perButtonDelay), (value) =>
+                {
+                    var img = child.GetChild(0).GetComponent<RectTransform>();
+                    img.sizeDelta = new Vector2(value ,img.sizeDelta.y);
+                });
+                i++;
+            }
+
             return DOVirtual.DelayedCall(showMenuDuration, () => { });
         }
 
@@ -163,11 +196,21 @@ namespace Gazeus.DesafioMatch3.Controllers
         {
             BoardSequence boardSequence = boardSequences[index];
 
-            _boardView.ComboEffects(boardSequence.MatchedPosition, dissolveScale, dissolveDuration, comboRotation).onComplete += () =>
+            int combinations = boardSequence.MatchedPosition.Count;
+            float duration = combinations > 3 ? dissolveDurationCombo : dissolveDuration;
+
+            _boardView.ComboEffects(boardSequence.MatchedPosition, dissolveScale, duration, dissolveCurve, dissolveShaderCurve, comboRotation, comboRotateCurve, destroyParticle, particleDelayPerc,
+                bounceBGDuration, bounceBGCurve, shineBGDuration, shineBGCurve)
+                .onComplete += () =>
             {
+                if (combinations > 6)
+                {
+                    ParticleCombo_Left.Play();
+                    ParticleCombo_Right.Play();
+                }
                 Sequence sequence = DOTween.Sequence();
-                sequence.Append(_boardView.DestroyTiles(boardSequence.MatchedPosition, destroyParticle));
-                sequence.Append(_boardView.MoveTiles(boardSequence.MovedTiles));
+                sequence.Append(_boardView.DestroyTiles(boardSequence.MatchedPosition));
+                sequence.Append(_boardView.MoveTiles(boardSequence.MovedTiles, moveDuration, moveCurve, wrongMovePunchScale, wrongMovePunchDuration));
                 sequence.Append(_boardView.CreateTile(boardSequence.AddedTiles));
 
                 index += 1;
@@ -196,7 +239,7 @@ namespace Gazeus.DesafioMatch3.Controllers
                 else
                 {
                     _isAnimating = true;
-                    _boardView.SwapTiles(_selectedX, _selectedY, x, y).onComplete += () =>
+                    _boardView.SwapTiles(_selectedX, _selectedY, x, y, true, moveDuration, moveCurve, wrongMovePunchScale, wrongMovePunchDuration).onComplete += () =>
                     {
                         bool isValid = _gameService.IsValidMovement(_selectedX, _selectedY, x, y);
                         if (isValid)
@@ -206,7 +249,8 @@ namespace Gazeus.DesafioMatch3.Controllers
                         }
                         else
                         {
-                            _boardView.SwapTiles(x, y, _selectedX, _selectedY).onComplete += () => _isAnimating = false;
+                            _boardView.SwapTiles(x, y, _selectedX, _selectedY, false, moveDuration, moveCurve, wrongMovePunchScale, wrongMovePunchDuration)
+                            .onComplete += () => _isAnimating = false;
                         }
                         _selectedX = -1;
                         _selectedY = -1;

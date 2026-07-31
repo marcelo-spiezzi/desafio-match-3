@@ -55,6 +55,8 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _BounceMult: 1.2
+    - _MaxBoundeMult: 1.5
     - _QueueControl: 0
     - _QueueOffset: 0
     - _SphereStrength: 100
@@ -65,7 +67,8 @@ Material:
     m_Colors:
     - _Color: {r: 0, g: 0, b: 0, a: 1}
     - _ColorA: {r: 0.98039216, g: 0.8931227, b: 0.7019608, a: 1}
-    - _ColorB: {r: 0.95699996, g: 0.87278396, b: 0.685212, a: 1}
+    - _ColorB: {r: 0.95686275, g: 0.8745098, b: 0.6862745, a: 1}
+    - _ColorB_Shine: {r: 1, g: 0.86274517, b: 0.56078434, a: 1}
     - _Speed: {r: -0.2, g: 0.1, b: 0, a: 0}
     - _SpeedMask: {r: 0.01, g: 0.01, b: 0, a: 0}
   m_BuildTextureStacks: []

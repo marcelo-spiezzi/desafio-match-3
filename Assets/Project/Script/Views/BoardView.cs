@@ -1,4 +1,5 @@
 ﻿using DG.Tweening;
+using Gazeus.DesafioMatch3.Controllers;
 using Gazeus.DesafioMatch3.Models;
 using Gazeus.DesafioMatch3.ScriptableObjects;
 using System;
@@ -108,18 +109,24 @@ namespace Gazeus.DesafioMatch3.Views
             return sequence;
         }
 
-        private void SpawnParticle(GameObject tile, ParticleSystem particle)
+        private void SpawnParticle(GameObject tile, ParticleSystem particle, float delay, Color tileColor)
         {
             Vector3 pos = new Vector3(tile.transform.position.x, tile.transform.position.y, 0.0f);
             var p = Instantiate(particle.gameObject, pos, Quaternion.identity);
             p.transform.localScale = p.transform.localScale * particleScaler;
+
+            ParticleSystem ps = p.GetComponent<ParticleSystem>();
+            var mainModule = ps.main;
+
+            mainModule.startDelay = delay;
+            mainModule.startColor = tileColor;
         }
 
-        public Tween ComboEffects(List<Vector2Int> matchedPosition, float dissolveScale, float dissolveDuration, Vector3 comboRotation)
+        public Tween ComboEffects(List<Vector2Int> matchedPosition, float dissolveScale, float dissolveDuration, Ease dissolveCurve, Ease dissolveShaderCurve, 
+            Vector3 comboRotation, Ease comboRotateCurve, ParticleSystem particle, float particleDelayPerc, float bounceBGDuration, Ease bounceBGCurve, 
+            float shineBGDuration, Ease shineBGCurve)
         {
             int combinations = matchedPosition.Count;
-
-            if (combinations > 3) dissolveDuration = dissolveDuration * 3.0f;
 
             for (int i = 0; i < combinations; i++)
             {
@@ -130,24 +137,34 @@ namespace Gazeus.DesafioMatch3.Views
                 Material instanceMat = Instantiate(img.material);
                 img.material = instanceMat;
 
-                instanceMat.DOFloat(0.0f, "_Dissolve", dissolveDuration);
-                tile.transform.DOScale(Vector3.one * dissolveScale, dissolveDuration);
+                tile.transform.DOScale(Vector3.one * dissolveScale, dissolveDuration).SetEase(dissolveCurve);
 
-                if(combinations > 3)
+                if (combinations > 3)
                 {
-                    tile.transform.DORotate(comboRotation, dissolveDuration);
+                    instanceMat.DOFloat(0.0f, "_Dissolve", dissolveDuration).SetEase(dissolveShaderCurve);
+                    tile.transform.DORotate(comboRotation, dissolveDuration).SetEase(comboRotateCurve);
                 }
+                else
+                {
+                    instanceMat.DOFloat(0.0f, "_RegularDissolve", dissolveDuration).SetEase(Ease.Linear);
+                }
+
+                DOVirtual.Float(0f, 1f, bounceBGDuration, (value) => {
+                    Shader.SetGlobalFloat("_BounceBG", value);
+                }).SetEase(bounceBGCurve).SetLoops(2, LoopType.Yoyo);
+
+                var color = tile.GetComponentInChildren<UnityEngine.UI.Image>().color;
+                SpawnParticle(_tiles[position.y][position.x], particle, dissolveDuration * particleDelayPerc, color);
             }
 
             return DOVirtual.DelayedCall(dissolveDuration, () => { });
         }
 
-        public Tween DestroyTiles(List<Vector2Int> matchedPosition, ParticleSystem particle)
+        public Tween DestroyTiles(List<Vector2Int> matchedPosition)
         {
             for (int i = 0; i < matchedPosition.Count; i++)
             {
                 Vector2Int position = matchedPosition[i];
-                SpawnParticle(_tiles[position.y][position.x], particle);
                 Destroy(_tiles[position.y][position.x]);
                 _tiles[position.y][position.x] = null;
             }
@@ -155,7 +172,7 @@ namespace Gazeus.DesafioMatch3.Views
             return DOVirtual.DelayedCall(0.05f, () => { });
         }
 
-        public Tween MoveTiles(List<MovedTileInfo> movedTiles)
+        public Tween MoveTiles(List<MovedTileInfo> movedTiles, float moveDuration, Ease moveCurve, float wrongScale, float wrongDuration)
         {
             GameObject[][] tiles = new GameObject[_tiles.Length][];
             for (int y = 0; y < _tiles.Length; y++)
@@ -175,7 +192,7 @@ namespace Gazeus.DesafioMatch3.Views
                 Vector2Int from = movedTileInfo.From;
                 Vector2Int to = movedTileInfo.To;
 
-                sequence.Join(_tileSpots[to.y][to.x].AnimatedSetTile(_tiles[from.y][from.x]));
+                sequence.Join(_tileSpots[to.y][to.x].AnimatedSetTile(_tiles[from.y][from.x], true, moveDuration, moveCurve, wrongScale, wrongDuration));
 
                 tiles[to.y][to.x] = _tiles[from.y][from.x];
             }
@@ -185,11 +202,11 @@ namespace Gazeus.DesafioMatch3.Views
             return sequence;
         }
 
-        public Tween SwapTiles(int fromX, int fromY, int toX, int toY)
+        public Tween SwapTiles(int fromX, int fromY, int toX, int toY, bool validMove, float moveDuration, Ease moveCurve, float wrongScale, float wrongDuration)
         {
             Sequence sequence = DOTween.Sequence();
-            sequence.Append(_tileSpots[fromY][fromX].AnimatedSetTile(_tiles[toY][toX]));
-            sequence.Join(_tileSpots[toY][toX].AnimatedSetTile(_tiles[fromY][fromX]));
+            sequence.Append(_tileSpots[fromY][fromX].AnimatedSetTile(_tiles[toY][toX], validMove, moveDuration, moveCurve, wrongScale, wrongDuration));
+            sequence.Join(_tileSpots[toY][toX].AnimatedSetTile(_tiles[fromY][fromX], validMove, moveDuration, moveCurve, wrongScale, wrongDuration));
 
             (_tiles[toY][toX], _tiles[fromY][fromX]) = (_tiles[fromY][fromX], _tiles[toY][toX]);
 

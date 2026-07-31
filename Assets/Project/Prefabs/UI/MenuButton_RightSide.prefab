@@ -121,10 +121,6 @@ PrefabInstance:
       value: MenuButton_RightSide
       objectReference: {fileID: 0}
     - target: {fileID: 7724643398762079302, guid: 3a92c228e81c00b43bcfe7b439506f07, type: 3}
-      propertyPath: m_LocalScale.x
-      value: -1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7724643398762079302, guid: 3a92c228e81c00b43bcfe7b439506f07, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
