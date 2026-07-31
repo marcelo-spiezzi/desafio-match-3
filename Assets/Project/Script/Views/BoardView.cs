@@ -21,15 +21,17 @@ namespace Gazeus.DesafioMatch3.Views
 
         private GameObject[][] _tiles;
         private TileSpotView[][] _tileSpots;
+        private float particleScaler = 1.0f;
 
-        public void AdjustCellSize(int width, int height, int maxSize)
+        public void AdjustCellSize(int width, int height, int maxSize, int minSize, int padding)
         {
-            int cellSize = Mathf.Min(Mathf.Clamp((Screen.width - 128) / width, 30, maxSize), Mathf.Clamp((Screen.height - 128) / height, 30, maxSize));
+            int cellSize = Mathf.Min(Mathf.Clamp((Screen.width - padding) / width, minSize, maxSize), Mathf.Clamp((Screen.height - padding) / height, minSize, maxSize));
             _boardContainer.cellSize = new Vector2(cellSize, cellSize);
+            particleScaler = (float) cellSize / minSize;
         }
 
-        //This is likely to break game tweens now, there is no OnDestroy checks on the game logic atm
-        public void DestroyBoard(float blendDuration)
+        //This will break game tweens, there is no OnDestroy checks on the game logic ATM
+        public void DestroyBoard(float blendDuration, Ease boardOutCurve)
         {
             _boardContainer.GetComponent<CanvasGroup>().interactable = false;
             _boardContainer.transform.DOScale(0.0f, blendDuration).OnComplete(() =>
@@ -38,10 +40,10 @@ namespace Gazeus.DesafioMatch3.Views
                 {
                     GameObject.Destroy(_boardContainer.transform.GetChild(i).gameObject);
                 }
-            });
+            }).SetEase(boardOutCurve);
         }
 
-        public void CreateBoard(List<List<Tile>> board, float blendDuration)
+        public void CreateBoard(List<List<Tile>> board, float blendDuration, Ease boardInCurve)
         {
             _boardContainer.transform.localScale = Vector3.one;
             _boardContainer.GetComponent<CanvasGroup>().interactable = false;
@@ -80,7 +82,7 @@ namespace Gazeus.DesafioMatch3.Views
             _boardContainer.transform.DOScale(1.0f, blendDuration).OnComplete(() =>
             {
                 _boardContainer.GetComponent<CanvasGroup>().interactable = true;
-            });
+            }).SetEase(boardInCurve);
         }
 
         public Tween CreateTile(List<AddedTileInfo> addedTiles)
@@ -109,7 +111,8 @@ namespace Gazeus.DesafioMatch3.Views
         private void SpawnParticle(GameObject tile, ParticleSystem particle)
         {
             Vector3 pos = new Vector3(tile.transform.position.x, tile.transform.position.y, 0.0f);
-            Instantiate(particle.gameObject, pos, Quaternion.identity);
+            var p = Instantiate(particle.gameObject, pos, Quaternion.identity);
+            p.transform.localScale = p.transform.localScale * particleScaler;
         }
 
         public Tween ComboEffects(List<Vector2Int> matchedPosition, float dissolveScale, float dissolveDuration, Vector3 comboRotation)
@@ -141,8 +144,6 @@ namespace Gazeus.DesafioMatch3.Views
 
         public Tween DestroyTiles(List<Vector2Int> matchedPosition, ParticleSystem particle)
         {
-            Debug.Log("destroying tiles");
-
             for (int i = 0; i < matchedPosition.Count; i++)
             {
                 Vector2Int position = matchedPosition[i];
@@ -156,8 +157,6 @@ namespace Gazeus.DesafioMatch3.Views
 
         public Tween MoveTiles(List<MovedTileInfo> movedTiles)
         {
-            Debug.Log("moving tiles");
-
             GameObject[][] tiles = new GameObject[_tiles.Length][];
             for (int y = 0; y < _tiles.Length; y++)
             {
@@ -188,8 +187,6 @@ namespace Gazeus.DesafioMatch3.Views
 
         public Tween SwapTiles(int fromX, int fromY, int toX, int toY)
         {
-            Debug.Log("swaping tiles");
-
             Sequence sequence = DOTween.Sequence();
             sequence.Append(_tileSpots[fromY][fromX].AnimatedSetTile(_tiles[toY][toX]));
             sequence.Join(_tileSpots[toY][toX].AnimatedSetTile(_tiles[fromY][fromX]));

@@ -64,8 +64,8 @@ Material:
     - _TilingMask: 200
     m_Colors:
     - _Color: {r: 0, g: 0, b: 0, a: 1}
-    - _ColorA: {r: 0.764151, g: 0.764151, b: 0.764151, a: 1}
-    - _ColorB: {r: 0.735849, g: 0.735849, b: 0.735849, a: 1}
+    - _ColorA: {r: 0.98039216, g: 0.8931227, b: 0.7019608, a: 1}
+    - _ColorB: {r: 0.95699996, g: 0.87278396, b: 0.685212, a: 1}
     - _Speed: {r: -0.2, g: 0.1, b: 0, a: 0}
     - _SpeedMask: {r: 0.01, g: 0.01, b: 0, a: 0}
   m_BuildTextureStacks: []

@@ -8,6 +8,7 @@ using System.Linq;
 using UnityEditor.Graphs;
 using UnityEngine;
 using UnityEngine.SocialPlatforms.Impl;
+using TMPro;
 
 namespace Gazeus.DesafioMatch3.Controllers
 {
@@ -19,18 +20,27 @@ namespace Gazeus.DesafioMatch3.Controllers
         [SerializeField] private RectTransform mainMenuPanel;
         [SerializeField] private RectTransform mainMenuAnchorRef;
         [SerializeField] private CanvasGroup gameMenu;
+        [SerializeField] private Transform BoardTitle;
+
 
         [Header("Menu Animation Settings")]
-        [SerializeField] private float moveX = 300f;
+        [SerializeField] private float moveMenuX = 300f;
         [SerializeField] private float showMenuDuration = 1.2f;
+        [SerializeField] private Ease showMenuCurve;
         [SerializeField] private float hideMenuDuration = 1.2f;
+        [SerializeField] private Ease hideMenuCurve;
+        [SerializeField] private float showGameMenuDuration = 1.2f;
+        [SerializeField] private float hideGameMenuDuration = 1.2f;
         [SerializeField] private float boardInDuration = 0.8f;
+        [SerializeField] private Ease boardInCurve;
         [SerializeField] private float boardOutDuration = 0.4f;
+        [SerializeField] private Ease boardOutCurve;
+
 
         [Header("Board Config")]
-        [SerializeField] private int _boardHeight = 10;
-        [SerializeField] private int _boardWidth = 10;
         [SerializeField] private int _maxCellSize = 80;
+        [SerializeField] private int _minCellSize = 24;
+        [SerializeField] private int _screenPadding = 160;
 
         [Header("Game Animation Settings")]
         [SerializeField] private float dissolveScale = 1.2f;
@@ -39,6 +49,10 @@ namespace Gazeus.DesafioMatch3.Controllers
         [SerializeField] private ParticleSystem destroyParticle;
 
         private GameService _gameService;
+
+        private int _boardHeight = 10;
+        private int _boardWidth = 10;
+
         private bool _isAnimating;
         private int _selectedX = -1;
         private int _selectedY = -1;
@@ -59,12 +73,21 @@ namespace Gazeus.DesafioMatch3.Controllers
         private void Start()
         {
             _isGameActive = false;
-            gameMenu.gameObject.SetActive(false);
-            mainMenuPanel.transform.position = new Vector3(mainMenuAnchorRef.transform.position.x + moveX, 
+
+            gameMenu.alpha = 0.0f;
+            gameMenu.interactable = false;
+
+            mainMenuPanel.transform.position = new Vector3(mainMenuAnchorRef.transform.position.x + moveMenuX, 
                 mainMenuPanel.transform.position.y, mainMenuPanel.transform.position.z);
             ShowMainMenu();
 
         }
+
+        public void UpdateBoardTitle(string name)
+        {
+            BoardTitle.GetComponent<TextMeshProUGUI>().text = name;
+        }
+
         #endregion
         public void NewGame(int size)
         {
@@ -79,21 +102,21 @@ namespace Gazeus.DesafioMatch3.Controllers
             ShowGameMenu();
 
             List<List<Tile>> board = _gameService.StartGame(_boardWidth, _boardHeight);
-            _boardView.CreateBoard(board, boardInDuration);
-            _boardView.AdjustCellSize(_boardWidth, _boardHeight, _maxCellSize);
+            _boardView.CreateBoard(board, boardInDuration, boardInCurve);
+            _boardView.AdjustCellSize(_boardWidth, _boardHeight, _maxCellSize, _minCellSize, _screenPadding);
         }
 
         public void ExitGame()
         {
             _isGameActive = false;
-            _boardView.DestroyBoard(boardOutDuration); //not performing any checks in here, assuming tweens and other code would do OnDestroy() validations at a final product scenario
+            _boardView.DestroyBoard(boardOutDuration, boardOutCurve); //not performing any checks in here, assuming tweens and other code would do OnDestroy() validations at a final product scenario
             ShowMainMenu();
             HideGameMenu();
         }
 
         private Tween HideMainMenu()
         {
-            mainMenuPanel.DOMoveX(mainMenuAnchorRef.transform.position.x + moveX, hideMenuDuration);
+            mainMenuPanel.DOMoveX(mainMenuAnchorRef.transform.position.x + moveMenuX, hideMenuDuration).SetEase(hideMenuCurve);
 
             DOVirtual.Float(1.0f, 0.0f, hideMenuDuration, (value) =>
             {
@@ -108,7 +131,7 @@ namespace Gazeus.DesafioMatch3.Controllers
         private Tween ShowMainMenu()
         {
             mainMenu.gameObject.SetActive(true);
-            mainMenuPanel.DOMoveX(mainMenuAnchorRef.transform.position.x, showMenuDuration);
+            mainMenuPanel.DOMoveX(mainMenuAnchorRef.transform.position.x, showMenuDuration).SetEase(showMenuCurve);
 
             DOVirtual.Float(0.0f, 1.0f, showMenuDuration*1.5f, (value) =>
             {
@@ -120,12 +143,20 @@ namespace Gazeus.DesafioMatch3.Controllers
 
         private void HideGameMenu()
         {
-            gameMenu.gameObject.SetActive(false);
+            gameMenu.interactable = false;
+            DOVirtual.Float(1.0f, 0.0f, hideGameMenuDuration, (value) =>
+            {
+                gameMenu.alpha = value;
+            });
         }
 
         private void ShowGameMenu()
         {
-            gameMenu.gameObject.SetActive(true);
+            gameMenu.interactable = true;
+            DOVirtual.Float(0.0f, 1.0f, showGameMenuDuration, (value) =>
+            {
+                gameMenu.alpha = value;
+            });
         }
 
         private void AnimateBoard(List<BoardSequence> boardSequences, int index, Action onComplete)
