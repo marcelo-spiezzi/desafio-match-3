@@ -10,6 +10,7 @@ using TMPro;
 using UnityEditor.Graphs;
 using UnityEngine;
 using UnityEngine.SocialPlatforms.Impl;
+using UnityEngine.UI;
 
 namespace Gazeus.DesafioMatch3.Controllers
 {
@@ -23,6 +24,7 @@ namespace Gazeus.DesafioMatch3.Controllers
         [SerializeField] private RectTransform mainMenuButtonsHolder;
         [SerializeField] private CanvasGroup gameMenu;
         [SerializeField] private Transform BoardTitle;
+        [SerializeField] private Slider themeSlider;
 
         [Header("Menu Animation Settings")]
         [SerializeField] private float moveMenuX = 300f;
@@ -88,12 +90,15 @@ namespace Gazeus.DesafioMatch3.Controllers
         {
             _boardView.TileClicked -= OnTileClick;
             Shader.SetGlobalFloat("_BounceBG", 0.0f);
+            Shader.SetGlobalFloat("_Theme", 0.0f);
+            themeSlider.onValueChanged.RemoveListener(OnThemeSliderChanged);
         }
 
         private void Start()
         {
             _isGameActive = false;
 
+            themeSlider.onValueChanged.AddListener(OnThemeSliderChanged);
             Shader.SetGlobalFloat("_BounceBG", 0.0f);
 
             gameMenu.alpha = 0.0f;
@@ -102,6 +107,11 @@ namespace Gazeus.DesafioMatch3.Controllers
             mainMenuPanel.transform.position = new Vector3(mainMenuAnchorRef.transform.position.x + moveMenuX, 
                 mainMenuPanel.transform.position.y, mainMenuPanel.transform.position.z);
             ShowMainMenu();
+        }
+
+        void OnThemeSliderChanged(float value)
+        {
+            Shader.SetGlobalFloat("_Theme", value);
         }
 
         public void UpdateBoardTitle(string name)

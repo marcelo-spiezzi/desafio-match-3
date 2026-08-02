@@ -60,16 +60,23 @@ Material:
     - _QueueControl: 0
     - _QueueOffset: 0
     - _SphereStrength: 100
+    - _SphereStrength_B: 15
     - _TILE: 6
+    - _Theme: 1
     - _Tiling: 40
     - _TilingMain: 40
     - _TilingMask: 200
     m_Colors:
     - _Color: {r: 0, g: 0, b: 0, a: 1}
     - _ColorA: {r: 0.98039216, g: 0.8931227, b: 0.7019608, a: 1}
+    - _ColorA_B: {r: 0.123598404, g: 0.14150941, b: 0.12348699, a: 1}
     - _ColorB: {r: 0.95686275, g: 0.8745098, b: 0.6862745, a: 1}
+    - _ColorB_B: {r: 0.112362064, g: 0.23584908, b: 0.15594573, a: 1}
     - _ColorB_Shine: {r: 1, g: 0.86274517, b: 0.56078434, a: 1}
     - _Speed: {r: -0.2, g: 0.1, b: 0, a: 0}
     - _SpeedMask: {r: 0.01, g: 0.01, b: 0, a: 0}
+    - _Speed_B: {r: 0.5, g: 0.4, b: 0, a: 0}
+    - _Tiling_A: {r: 40, g: 40, b: 0, a: 0}
+    - _Tiling_B: {r: 2, g: 300, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
