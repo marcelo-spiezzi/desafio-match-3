@@ -343,14 +343,14 @@ MonoBehaviour:
   m_text: New Game
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 66c042f79094e094da89ad2059b14406, type: 2}
-  m_sharedMaterial: {fileID: -4821374882063500331, guid: 66c042f79094e094da89ad2059b14406, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: 98e960f63edbb3e45b3f9c747c646bf4, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4280829485
-  m_fontColor: {r: 0.1764706, g: 0.27450982, b: 0.15686275, a: 1}
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:

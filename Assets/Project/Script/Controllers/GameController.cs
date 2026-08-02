@@ -9,8 +9,12 @@ using System.Linq;
 using TMPro;
 using UnityEditor.Graphs;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SocialPlatforms.Impl;
 using UnityEngine.UI;
+using UnityEngine.UIElements;
+using static UnityEditor.PlayerSettings;
 
 namespace Gazeus.DesafioMatch3.Controllers
 {
@@ -23,8 +27,8 @@ namespace Gazeus.DesafioMatch3.Controllers
         [SerializeField] private RectTransform mainMenuAnchorRef;
         [SerializeField] private RectTransform mainMenuButtonsHolder;
         [SerializeField] private CanvasGroup gameMenu;
-        [SerializeField] private Transform BoardTitle;
-        [SerializeField] private Slider themeSlider;
+        [SerializeField] private Transform boardTitle;
+        [SerializeField] private Volume postProcessVolume;
 
         [Header("Menu Animation Settings")]
         [SerializeField] private float moveMenuX = 300f;
@@ -69,6 +73,13 @@ namespace Gazeus.DesafioMatch3.Controllers
         [SerializeField] private float wrongMovePunchScale = 1.1f;
         [SerializeField] private float wrongMovePunchDuration = 0.1f;
 
+        [Header("Visual Settings")]
+        [SerializeField] private float bloom_themeA = 2f;
+        [SerializeField] private float bloom_themeB = 8f;
+        [SerializeField] private float chromaticDuration = 8f;
+        [SerializeField] private float chromaticValue = 8f;
+        [SerializeField] private Ease chromaticCurve;
+
         private GameService _gameService;
 
         private int _boardHeight = 10;
@@ -78,6 +89,9 @@ namespace Gazeus.DesafioMatch3.Controllers
         private int _selectedX = -1;
         private int _selectedY = -1;
         private bool _isGameActive = false;
+
+        private Bloom bloomEffect;
+        private ChromaticAberration chromaticEffect;
 
         #region Unity
         private void Awake()
@@ -91,14 +105,12 @@ namespace Gazeus.DesafioMatch3.Controllers
             _boardView.TileClicked -= OnTileClick;
             Shader.SetGlobalFloat("_BounceBG", 0.0f);
             Shader.SetGlobalFloat("_Theme", 0.0f);
-            themeSlider.onValueChanged.RemoveListener(OnThemeSliderChanged);
         }
 
         private void Start()
         {
             _isGameActive = false;
 
-            themeSlider.onValueChanged.AddListener(OnThemeSliderChanged);
             Shader.SetGlobalFloat("_BounceBG", 0.0f);
 
             gameMenu.alpha = 0.0f;
@@ -109,14 +121,28 @@ namespace Gazeus.DesafioMatch3.Controllers
             ShowMainMenu();
         }
 
-        void OnThemeSliderChanged(float value)
+        public void ChangeTheme()
         {
+            float value = 1.0f - Shader.GetGlobalFloat("_Theme");
             Shader.SetGlobalFloat("_Theme", value);
+
+            if (postProcessVolume.profile.TryGet<Bloom>(out bloomEffect))
+            {
+                bloomEffect.intensity.value = Mathf.Lerp(bloom_themeA, bloom_themeB, value);
+            }
+
+            if (postProcessVolume.profile.TryGet<ChromaticAberration>(out chromaticEffect))
+            {
+                DOVirtual.Float(0.0f, chromaticValue, chromaticDuration, (value) =>
+                {
+                    chromaticEffect.intensity.value = value;
+                }).SetEase(chromaticCurve).SetLoops(2, LoopType.Yoyo);
+            }
         }
 
         public void UpdateBoardTitle(string name)
         {
-            BoardTitle.GetComponent<TextMeshProUGUI>().text = name;
+            boardTitle.GetComponent<TextMeshProUGUI>().text = name;
         }
 
         #endregion
