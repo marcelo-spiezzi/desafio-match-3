@@ -1,5 +1,7 @@
-using System.Collections.Generic;
 using Gazeus.DesafioMatch3.Models;
+using NUnit.Framework;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Gazeus.DesafioMatch3.Core
@@ -42,7 +44,7 @@ namespace Gazeus.DesafioMatch3.Core
         public List<List<Tile>> StartGame(int boardWidth, int boardHeight, int variation)
         {
             if (variation == 0) { _tilesTypes = new List<int> { 0, 1, 2, 3 }; }
-            else if (variation == 1) { _tilesTypes = new List<int> { 0, 1, 2, 3, 4  };  }
+            else if (variation == 1) { _tilesTypes = new List<int> { 0, 1, 2, 3, 4  };  } //4 is tile type that destroys all tiles at same row
             else { _tilesTypes = new List<int> { 0, 1, 2, 3, 4, 5 };  }
 
             _boardTiles = CreateBoard(boardWidth, boardHeight, _tilesTypes);
@@ -61,16 +63,49 @@ namespace Gazeus.DesafioMatch3.Core
 
             while (HasMatch(matchedTiles))
             {
-                //Cleaning the matched tiles
+                int comboRowY = -1;
+
                 List<Vector2Int> matchedPosition = new();
+
                 for (int y = 0; y < newBoard.Count; y++)
                 {
                     for (int x = 0; x < newBoard[y].Count; x++)
                     {
                         if (matchedTiles[y][x])
                         {
-                            matchedPosition.Add(new Vector2Int(x, y));
-                            newBoard[y][x] = new Tile { Id = -1, Type = -1 };
+                            if(newBoard[y][x].Type == 4) 
+                            {
+                                int combo = 1;
+                                for (int cx = 1; cx < newBoard[y].Count; cx++)
+                                {
+                                    if(newBoard[y][cx-1].Type == 4)
+                                    {
+                                        if (newBoard[y][cx].Type == 4)
+                                        {
+                                            combo++;
+                                            if (combo > 2) break;
+                                        }
+                                        else
+                                        {
+                                            combo = 1;
+                                        }
+                                    }
+                                }
+                                if(combo > 2) //add all tiles of that row since we have a type 4 combination
+                                {
+                                    for (int i = 0; i < newBoard[y].Count; i++)
+                                    {
+                                        comboRowY = y;
+                                        matchedPosition.Add(new Vector2Int(i, y));
+                                        newBoard[y][i] = new Tile { Id = -1, Type = -1 };
+                                    }
+                                }
+                            }
+                            if (!matchedPosition.Contains(new Vector2Int(x, y)))
+                            {
+                                matchedPosition.Add(new Vector2Int(x, y));
+                                newBoard[y][x] = new Tile { Id = -1, Type = -1 };
+                            }
                         }
                     }
                 }
@@ -140,7 +175,8 @@ namespace Gazeus.DesafioMatch3.Core
                 {
                     MatchedPosition = matchedPosition,
                     MovedTiles = movedTilesList,
-                    AddedTiles = addedTiles
+                    AddedTiles = addedTiles,
+                    rowComboID = comboRowY
                 };
                 boardSequences.Add(sequence);
                 matchedTiles = FindMatches(newBoard);
