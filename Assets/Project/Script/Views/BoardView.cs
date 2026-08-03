@@ -31,7 +31,6 @@ namespace Gazeus.DesafioMatch3.Views
             particleScaler = (float) cellSize / minSize;
         }
 
-        //This will break game tweens, there is no OnDestroy checks on the game logic ATM
         public void DestroyBoard(float blendDuration, Ease boardOutCurve)
         {
             _boardContainer.GetComponent<CanvasGroup>().interactable = false;
@@ -148,10 +147,6 @@ namespace Gazeus.DesafioMatch3.Views
                 {
                     instanceMat.DOFloat(0.0f, "_RegularDissolve", dissolveDuration).SetEase(Ease.Linear);
                 }
-
-                DOVirtual.Float(0f, 1f, bounceBGDuration, (value) => {
-                    Shader.SetGlobalFloat("_BounceBG", value);
-                }).SetEase(bounceBGCurve).SetLoops(2, LoopType.Yoyo);
 
                 var color = tile.GetComponentInChildren<UnityEngine.UI.Image>().color;
                 SpawnParticle(_tiles[position.y][position.x], particle, dissolveDuration * particleDelayPerc, color);

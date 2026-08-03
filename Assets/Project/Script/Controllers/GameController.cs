@@ -4,6 +4,7 @@ using Gazeus.DesafioMatch3.Core;
 using Gazeus.DesafioMatch3.Models;
 using Gazeus.DesafioMatch3.Views;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -15,6 +16,7 @@ using UnityEngine.SocialPlatforms.Impl;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
 using static UnityEditor.PlayerSettings;
+using static UnityEngine.Rendering.DebugUI;
 
 namespace Gazeus.DesafioMatch3.Controllers
 {
@@ -28,6 +30,7 @@ namespace Gazeus.DesafioMatch3.Controllers
         [SerializeField] private RectTransform mainMenuButtonsHolder;
         [SerializeField] private CanvasGroup gameMenu;
         [SerializeField] private Transform boardTitle;
+        [SerializeField] private CanvasGroup themeMenu;
         [SerializeField] private Volume postProcessVolume;
 
         [Header("Menu Animation Settings")]
@@ -92,6 +95,7 @@ namespace Gazeus.DesafioMatch3.Controllers
 
         private Bloom bloomEffect;
         private ChromaticAberration chromaticEffect;
+        private ColorAdjustments colorEffect;
 
         #region Unity
         private void Awake()
@@ -115,10 +119,33 @@ namespace Gazeus.DesafioMatch3.Controllers
 
             gameMenu.alpha = 0.0f;
             gameMenu.interactable = false;
+            themeMenu.alpha = 0.0f;
+            themeMenu.interactable = false;
 
             mainMenuPanel.transform.position = new Vector3(mainMenuAnchorRef.transform.position.x + moveMenuX, 
                 mainMenuPanel.transform.position.y, mainMenuPanel.transform.position.z);
-            ShowMainMenu();
+            StartGame();
+        }
+
+        private Tween StartGame()
+        {
+            postProcessVolume.profile.TryGet<ColorAdjustments>(out colorEffect);
+
+            return DOVirtual.Color(Color.black, Color.white, 0.5f, (value) =>
+            {
+                colorEffect.colorFilter.value = value;
+            }).OnComplete(() => { 
+                ShowMainMenu().OnComplete(() => ShowThemeMenu());
+                });
+        }
+
+        private void ShowThemeMenu()
+        {
+            themeMenu.interactable = true;
+            DOVirtual.Float(0.0f, 1.0f, showGameMenuDuration, (value) =>
+            {
+                themeMenu.alpha = value;
+            });
         }
 
         public void ChangeTheme()
@@ -158,7 +185,11 @@ namespace Gazeus.DesafioMatch3.Controllers
             HideMainMenu();
             ShowGameMenu();
 
-            List<List<Tile>> board = _gameService.StartGame(_boardWidth, _boardHeight);
+            int variations = 1;
+            if (size <= 5) variations = 0;
+            else if (size >= 8) variations = 2;
+
+            List<List<Tile>> board = _gameService.StartGame(_boardWidth, _boardHeight, variations);
             _boardView.CreateBoard(board, boardInDuration, boardInCurve);
             _boardView.AdjustCellSize(_boardWidth, _boardHeight, _maxCellSize, _minCellSize, _screenPadding);
         }
@@ -198,10 +229,12 @@ namespace Gazeus.DesafioMatch3.Controllers
             int i = 0;
             foreach (Transform child in mainMenuButtonsHolder)
             {
+                var img = child.GetChild(0).GetComponent<RectTransform>();
                 float shrinkSize = child.GetComponent<RectTransform>().sizeDelta.x * shrinkButtonPerc;
+                img.sizeDelta = new Vector2(-shrinkSize, img.sizeDelta.y);
+
                 DOVirtual.Float(-shrinkSize, 0.0f, shrinkButtonDuration + (i * perButtonDelay), (value) =>
                 {
-                    var img = child.GetChild(0).GetComponent<RectTransform>();
                     img.sizeDelta = new Vector2(value ,img.sizeDelta.y);
                 });
                 i++;
@@ -233,7 +266,17 @@ namespace Gazeus.DesafioMatch3.Controllers
             BoardSequence boardSequence = boardSequences[index];
 
             int combinations = boardSequence.MatchedPosition.Count;
+
+            //Not performing type (color) matching checking for combined tiles since the BoardSequence is only providing the X,Y coords of matching tiles
+            //so I'm not sure if the intended design to determine combos is to consider only the total amount of tiles matched, or the total amount of same color, or even the same color that are adjanced to one another
+            //for this reason, and since I don't think this is necessarily the intention of the Tech Art test, I'm moving foward with the simplest method that is checking only the total amount of tiles to check for combos
             float duration = combinations > 3 ? dissolveDurationCombo : dissolveDuration;
+
+            DOVirtual.Float(0f, 1f, bounceBGDuration, (value) => {
+                Shader.SetGlobalFloat("_BounceBG", value);
+            }).SetEase(bounceBGCurve).SetLoops(2, LoopType.Yoyo);
+
+            gameMenu.interactable = false; //avoiding tween erros due to not treating OnDestroy events atm
 
             _boardView.ComboEffects(boardSequence.MatchedPosition, dissolveScale, duration, dissolveCurve, dissolveShaderCurve, comboRotation, comboRotateCurve, destroyParticle, particleDelayPerc,
                 bounceBGDuration, bounceBGCurve, shineBGDuration, shineBGCurve)
@@ -258,6 +301,11 @@ namespace Gazeus.DesafioMatch3.Controllers
                 {
                     sequence.onComplete += () => onComplete();
                 }
+
+                sequence.onComplete += () =>
+                {
+                    gameMenu.interactable = true;
+                };
             };
         }
 
